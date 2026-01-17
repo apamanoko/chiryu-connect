@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
 import { formatRelativeTime } from '@/lib/utils/format';
-import { Check, X } from 'lucide-react';
+import { Check, X, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 
 interface ApplicationCardProps {
   application: ApplicationWithApplicant;
@@ -134,29 +135,46 @@ export function ApplicationCard({ application, currentUserId, isPostAuthor }: Ap
               </div>
             )}
 
-            {/* アクションボタン（募集者のみ、承認待ちの場合のみ表示） */}
-            {isPostAuthor && application.status === 'pending' && (
+            {/* アクションボタン（募集者のみ） */}
+            {isPostAuthor && (
               <div className="flex gap-2 pt-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={handleApprove}
-                  disabled={isPending}
-                  className="flex-1"
-                >
-                  <Check className="w-4 h-4 mr-1" />
-                  承認
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleReject}
-                  disabled={isPending}
-                  className="flex-1"
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  却下
-                </Button>
+                {application.status === 'pending' && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={handleApprove}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      承認
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleReject}
+                      disabled={isPending}
+                      className="flex-1"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      却下
+                    </Button>
+                  </>
+                )}
+                {application.status === 'approved' && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    asChild
+                    className="flex-1"
+                  >
+                    <Link href={`/chat/${application.id}`}>
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      チャットを開く
+                    </Link>
+                  </Button>
+                )}
               </div>
             )}
           </div>

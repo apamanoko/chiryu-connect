@@ -83,6 +83,19 @@ npm run type-check
 npm run db:studio
 ```
 
+## デプロイ
+
+このアプリはVercelで無料デプロイできます。詳細は[デプロイガイド](docs/deployment.md)を参照してください。
+
+### クイックデプロイ
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/apamanoko/chiryu-connect)
+
+1. 上記のボタンをクリック
+2. GitHubリポジトリを選択
+3. 環境変数を設定
+4. デプロイ
+
 ## ライセンス
 
 このプロジェクトは個人プロジェクトです。

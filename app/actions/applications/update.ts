@@ -84,14 +84,16 @@ export async function updateApplicationStatusAction(
       // 応募ステータスを更新
       const updatedApplication = await updateApplicationStatus(applicationId, 'approved');
 
-      // 投稿の現在の応募者数を更新
-      const newCurrentParticipants = post.currentParticipants + 1;
+      // 投稿の現在の応募者数を更新（承認済み応募者の数を再計算）
+      const allApplications = await getApplicationsByPostId(post.id, 1000, 0);
+      const approvedCount = allApplications.filter((app) => app.status === 'approved').length;
+      
       await updatePost(post.id, {
-        currentParticipants: newCurrentParticipants,
+        currentParticipants: approvedCount,
       });
 
       // 満員になった場合は募集ステータスを'closed'に更新
-      if (newCurrentParticipants >= post.maxParticipants) {
+      if (approvedCount >= post.maxParticipants) {
         await updatePost(post.id, {
           status: 'closed',
         });

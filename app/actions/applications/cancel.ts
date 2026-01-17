@@ -64,17 +64,21 @@ export async function cancelApplicationAction(
       };
     }
 
-    // 承認済みの応募をキャンセルする場合（募集者の場合）、現在の応募者数を減らす
+    // 承認済みの応募をキャンセルする場合、現在の応募者数を再計算
     if (application.status === 'approved') {
       const post = await getPostById(application.postId);
       if (post) {
-        const newCurrentParticipants = Math.max(0, post.currentParticipants - 1);
+        // 承認済みの応募者数を再計算
+        const { getApplicationsByPostId } = await import('@/lib/db/queries/applications');
+        const allApplications = await getApplicationsByPostId(post.id, 1000, 0);
+        const approvedCount = allApplications.filter((app) => app.status === 'approved').length;
+        
         await updatePost(post.id, {
-          currentParticipants: newCurrentParticipants,
+          currentParticipants: approvedCount,
         });
 
         // 満員から空きが出た場合は募集ステータスを'active'に戻す
-        if (post.status === 'closed' && newCurrentParticipants < post.maxParticipants) {
+        if (post.status === 'closed' && approvedCount < post.maxParticipants) {
           await updatePost(post.id, {
             status: 'active',
           });
