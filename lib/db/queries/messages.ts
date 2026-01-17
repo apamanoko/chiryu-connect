@@ -197,5 +197,157 @@ export async function getChatRoomsByUserId(userId: string): Promise<
   );
 
   // nullを除外
-  return chatRooms.filter((room): room is NonNullable<typeof room> => room !== null);
+  const validChatRooms = chatRooms.filter((room): room is NonNullable<typeof room> => room !== null);
+
+  // 最新メッセージの日時順にソート（最新が上）
+  validChatRooms.sort((a, b) => {
+    // メッセージがある場合はその日時で比較
+    if (a.latestMessage && b.latestMessage) {
+      return b.latestMessage.createdAt.getTime() - a.latestMessage.createdAt.getTime();
+    }
+    // 片方だけメッセージがある場合は、メッセージがある方を上に
+    if (a.latestMessage && !b.latestMessage) {
+      return -1;
+    }
+    if (!a.latestMessage && b.latestMessage) {
+      return 1;
+    }
+    // 両方メッセージがない場合は、応募IDで比較（安定ソート）
+    return a.application.id.localeCompare(b.application.id);
+  });
+
+  return validChatRooms;
+}
+
+/**
+ * メッセージを既読にする
+ * 受信者が自分のメッセージを既読にする
+ */
+export async function markMessageAsRead(
+  messageId: string,
+  userId: string
+): Promise<MessageWithUsers | null> {
+  // メッセージを取得
+  const [messageResult] = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.id, messageId))
+    .limit(1);
+
+  if (!messageResult) {
+    return null;
+  }
+
+  // 受信者チェック：受信者のみ既読にできる
+  if (messageResult.receiverId !== userId) {
+    return null;
+  }
+
+  // 既に既読の場合は何もしない
+  if (messageResult.isRead) {
+    // ユーザー情報を取得して返す
+    const [sender, receiver] = await Promise.all([
+      db.select().from(users).where(eq(users.id, messageResult.senderId)).limit(1),
+      db.select().from(users).where(eq(users.id, messageResult.receiverId)).limit(1),
+    ]);
+
+    if (!sender[0] || !receiver[0]) {
+      return null;
+    }
+
+    return {
+      ...messageResult,
+      sender: sender[0],
+      receiver: receiver[0],
+    };
+  }
+
+  // 既読状態を更新
+  const [updatedMessage] = await db
+    .update(messages)
+    .set({ isRead: true })
+    .where(eq(messages.id, messageId))
+    .returning();
+
+  // 送信者と受信者の情報を取得
+  const [sender, receiver] = await Promise.all([
+    db.select().from(users).where(eq(users.id, updatedMessage.senderId)).limit(1),
+    db.select().from(users).where(eq(users.id, updatedMessage.receiverId)).limit(1),
+  ]);
+
+  if (!sender[0] || !receiver[0]) {
+    return null;
+  }
+
+  return {
+    ...updatedMessage,
+    sender: sender[0],
+    receiver: receiver[0],
+  };
+}
+
+/**
+ * 複数のメッセージを一括で既読にする
+ * 受信者が自分のメッセージを既読にする
+ */
+export async function markMessagesAsRead(
+  messageIds: string[],
+  userId: string
+): Promise<MessageWithUsers[]> {
+  if (messageIds.length === 0) {
+    return [];
+  }
+
+  // 対象メッセージを取得（受信者が自分で、未読のもののみ）
+  const messagesResult = await db
+    .select()
+    .from(messages)
+    .where(
+      and(
+        inArray(messages.id, messageIds),
+        eq(messages.receiverId, userId),
+        eq(messages.isRead, false)
+      )
+    );
+
+  if (messagesResult.length === 0) {
+    return [];
+  }
+
+  const targetMessageIds = messagesResult.map((msg) => msg.id);
+
+  // 一括で既読状態を更新
+  await db
+    .update(messages)
+    .set({ isRead: true })
+    .where(inArray(messages.id, targetMessageIds));
+
+  // 更新されたメッセージを取得
+  const updatedMessages = await db
+    .select()
+    .from(messages)
+    .where(inArray(messages.id, targetMessageIds));
+
+  // ユーザーIDを収集
+  const userIds = new Set<string>();
+  updatedMessages.forEach((msg) => {
+    userIds.add(msg.senderId);
+    userIds.add(msg.receiverId);
+  });
+
+  // ユーザー情報を一括取得
+  const userIdsArray = Array.from(userIds);
+  const usersResult = await db
+    .select()
+    .from(users)
+    .where(inArray(users.id, userIdsArray));
+
+  const usersMap = new Map(usersResult.map((user) => [user.id, user]));
+
+  // メッセージとユーザー情報を結合
+  return updatedMessages.map((msg) => ({
+    ...msg,
+    sender: usersMap.get(msg.senderId)!,
+    receiver: usersMap.get(msg.receiverId)!,
+  }));
 }
