@@ -29,7 +29,7 @@ export default async function OnboardingPage() {
     <div className="w-full">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">プロフィール設定</h1>
-        <p className="text-gray-600">はじめに、あなたのプロフィールを設定してください</p>
+        <p className="text-gray-600">はじめに、あなたの名前と自己紹介を設定してください</p>
       </div>
       
       <div className="bg-white rounded-lg shadow-lg p-6">
