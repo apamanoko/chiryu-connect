@@ -114,7 +114,7 @@ export function ApplicationCard({ application, currentUserId, isPostAuthor }: Ap
           {/* コンテンツ */}
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <h4 className="font-semibold text-gray-900">{application.applicant.name}</h4>
                 <p className="text-xs text-gray-500">
                   {formatRelativeTime(application.createdAt)}
@@ -123,9 +123,22 @@ export function ApplicationCard({ application, currentUserId, isPostAuthor }: Ap
               {getStatusBadge()}
             </div>
 
+            {/* 応募者の自己紹介 */}
+            {application.applicant.bio && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">自己紹介</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+                  {application.applicant.bio}
+                </p>
+              </div>
+            )}
+
             {/* 応募メッセージ */}
             {application.message && (
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{application.message}</p>
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1">応募メッセージ</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{application.message}</p>
+              </div>
             )}
 
             {/* エラーメッセージ */}
