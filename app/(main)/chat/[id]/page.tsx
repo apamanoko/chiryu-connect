@@ -63,9 +63,11 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
                 {otherUser.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">{otherUser.name}</h2>
-              <p className="text-xs text-gray-500">{application.post.title}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-600 font-medium mb-0.5 truncate">
+                {application.post.title}
+              </p>
+              <h2 className="font-semibold text-gray-900 truncate">{otherUser.name}</h2>
             </div>
           </div>
         </div>

@@ -56,6 +56,11 @@ export function ChatRoomCard({ room, currentUserId }: ChatRoomCardProps) {
 
           {/* コンテンツ */}
           <div className="flex-1 min-w-0">
+            {/* 投稿タイトル */}
+            <p className="text-xs text-gray-600 font-medium mb-1 truncate">
+              {room.application.post.title}
+            </p>
+            
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-semibold text-gray-900 truncate">{otherUser.name}</h3>
               {room.latestMessage && (
@@ -68,7 +73,7 @@ export function ChatRoomCard({ room, currentUserId }: ChatRoomCardProps) {
               <p className="text-sm text-gray-600 line-clamp-1 truncate">
                 {room.latestMessage
                   ? room.latestMessage.content
-                  : `${room.application.post.title} についてのチャット`}
+                  : 'まだメッセージがありません'}
               </p>
               {room.unreadCount > 0 && (
                 <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 flex-shrink-0 ml-2">
