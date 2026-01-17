@@ -1,7 +1,7 @@
 import type { MessageWithUsers } from '@/lib/types/message';
 import { formatRelativeTime, formatDateTime } from '@/lib/utils/format';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getCurrentUser } from '@/lib/actions/auth';
+import { Check } from 'lucide-react';
 
 interface ChatMessageProps {
   message: MessageWithUsers;
@@ -12,7 +12,7 @@ interface ChatMessageProps {
  * メッセージバブルコンポーネント（Server Component）
  * LINE風のデザイン
  */
-export async function ChatMessage({ message, currentUserId }: ChatMessageProps) {
+export function ChatMessage({ message, currentUserId }: ChatMessageProps) {
   const isSent = message.senderId === currentUserId;
 
   return (
@@ -42,10 +42,23 @@ export async function ChatMessage({ message, currentUserId }: ChatMessageProps) 
           <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
         </div>
 
-        {/* タイムスタンプ */}
-        <span className={`text-xs text-gray-500 mt-1 ${isSent ? 'text-right' : 'text-left'}`}>
-          {formatRelativeTime(message.createdAt)}
-        </span>
+        {/* タイムスタンプと既読マーク */}
+        <div className={`flex items-center gap-1 mt-1 ${isSent ? 'flex-row-reverse' : 'flex-row'}`}>
+          <span className="text-xs text-gray-500">
+            {formatRelativeTime(message.createdAt)}
+          </span>
+          {/* 送信メッセージのみ既読マークを表示 */}
+          {isSent && (
+            <span className="text-xs" title={message.isRead ? '既読' : '未読'}>
+              <Check
+                className={`w-3 h-3 ${
+                  message.isRead ? 'text-green-500' : 'text-gray-400'
+                }`}
+                strokeWidth={3}
+              />
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

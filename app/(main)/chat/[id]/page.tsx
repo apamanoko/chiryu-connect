@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { getApplicationById } from '@/lib/db/queries/applications';
 import { getMessagesByApplicationId } from '@/lib/db/queries/messages';
-import { ChatMessage } from '@/components/chat/chat-message';
+import { ChatMessageWrapper } from '@/components/chat/chat-message-wrapper';
 import { ChatInput } from '@/components/chat/chat-input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -85,7 +85,7 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
             ) : (
               <div className="space-y-1">
                 {sortedMessages.map((message) => (
-                  <ChatMessage
+                  <ChatMessageWrapper
                     key={message.id}
                     message={message}
                     currentUserId={currentUser.id}
