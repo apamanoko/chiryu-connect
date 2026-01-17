@@ -93,7 +93,7 @@ export function OnboardingForm() {
       {/* 自己紹介 */}
       <div>
         <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-          自己紹介（任意）
+          自己紹介 <span className="text-red-500">*</span>
         </label>
         <Textarea
           id="bio"
@@ -102,6 +102,7 @@ export function OnboardingForm() {
           placeholder="自己紹介を入力してください..."
           rows={4}
           maxLength={MAX_LENGTH.USER_BIO}
+          required
           className="w-full resize-none"
         />
         <p className="mt-1 text-xs text-gray-500">
@@ -119,7 +120,7 @@ export function OnboardingForm() {
       {/* 送信ボタン */}
       <Button
         type="submit"
-        disabled={!name.trim() || isSubmitting}
+        disabled={!name.trim() || !bio.trim() || isSubmitting}
         className="w-full"
       >
         {isSubmitting ? '設定中...' : 'プロフィールを設定'}
