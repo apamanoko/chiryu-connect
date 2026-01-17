@@ -337,6 +337,10 @@ export async function markMessagesAsRead(
 
   // ユーザー情報を一括取得
   const userIdsArray = Array.from(userIds);
+  if (userIdsArray.length === 0) {
+    return [];
+  }
+
   const usersResult = await db
     .select()
     .from(users)

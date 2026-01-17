@@ -50,13 +50,14 @@ export function ChatMessageWrapper({
       }
     );
 
-    if (messageRef.current) {
-      observer.observe(messageRef.current);
+    const currentElement = messageRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
     }
 
     return () => {
-      if (messageRef.current) {
-        observer.unobserve(messageRef.current);
+      if (currentElement) {
+        observer.unobserve(currentElement);
       }
     };
   }, [message.id, message.senderId, message.isRead, currentUserId]);
