@@ -1,0 +1,86 @@
+# Chiryu Connect - 開発ルール
+
+## 基本方針
+
+### ドキュメント第一主義
+- コードを書く前に設計を明確にする
+- 複雑なロジックはコメントで意図を説明する
+- 型定義とインターフェースを重視し、実行時エラーを防ぐ
+- 変更時は関連ドキュメントも更新する
+
+### 型安全性の徹底
+- `any` 型の使用を禁止（`unknown` を使用し、適切に型ガード）
+- すべての関数の引数と戻り値に型を明示
+- Drizzle ORMの型推論を最大限活用
+- Server Actionsの入力/出力にZodスキーマを使用（将来実装）
+
+### モバイルファーストUI
+- すべてのUIコンポーネントはモバイル（375px）から設計
+- Tailwind CSS v4のレスポンシブユーティリティを活用
+- タッチターゲットは最低44x44pxを確保
+- 無限スクロールはモバイルでのパフォーマンスを最優先
+
+### コード品質
+- Server ActionsとUIコンポーネントは明確に分離
+- ビジネスロジックは `lib/` または `app/actions/` に配置
+- 再利用可能なコンポーネントは `components/` に配置
+- エラーハンドリングは適切に行い、ユーザーフレンドリーなメッセージを表示
+
+### パフォーマンス
+- 画像はNext.js Imageコンポーネントを使用
+- データフェッチは適切にキャッシュ（Next.js 16のキャッシュ戦略を活用）
+- 無限スクロールはReact QueryやSWRを検討（必要に応じて）
+- バンドルサイズを意識し、動的インポートを活用
+
+### セキュリティ
+- Server Actionsでの認証チェックを必須化
+- ユーザー入力は常にサニタイズ
+- SQLインジェクション対策（Drizzle ORMが自動対応）
+- XSS対策（Reactのデフォルトエスケープを活用）
+
+### テスト戦略（将来実装）
+- ユニットテスト: ビジネスロジック
+- 統合テスト: Server Actions
+- E2Eテスト: 主要なユーザーフロー
+
+## 技術スタック固有のルール
+
+### Next.js 16 (App Router)
+- **Server Componentsをデフォルト**: 非対話的なUIは可能な限りServer Component
+- **Client Componentsは最小限**: インタラクションが必要な部分のみ `'use client'` を使用
+- **Route Groupsを活用**: `(auth)`, `(main)` などで論理的にグループ化
+- **Colocation**: 各ルート内に `_components/` を配置し、機能に密に関わるロジックはその中で完結
+- **データフェッチ**: Server Componentsで直接フェッチ、Suspenseを活用
+- **キャッシング**: データの性質に応じて適切なキャッシュ戦略を設定
+- **エラーハンドリング**: `error.tsx`, `not-found.tsx` を適切に配置
+- **メタデータ**: `metadata` オブジェクトまたは `generateMetadata` で定義
+- **Server Actions**: 1ファイル1アクション、認証チェック必須、`revalidatePath` でキャッシュ無効化
+- 詳細は `docs/nextjs-best-practices.md` を参照
+
+### Tailwind CSS v4
+- カスタムカラーは `globals.css` で定義
+- コンポーネントスタイルは `@apply` を避け、ユーティリティクラスを優先
+
+### Drizzle ORM
+- スキーマは `lib/db/schema.ts` に一元管理
+- マイグレーションは `drizzle-kit` で管理
+- 型推論を活用し、手動の型定義を避ける
+
+### Clerk
+- 認証状態は `auth()` で取得（Server Components）
+- クライアント側では `useUser()` フックを使用
+- 認証が必要なページは `middleware.ts` で保護
+
+## 命名規則
+
+- コンポーネント: PascalCase（例: `VolunteerCard.tsx`）
+- Server Actions: camelCase + `Action` サフィックス（例: `createPostAction`）
+- ファイル名: kebab-case（例: `volunteer-card.tsx`）
+- 型/インターフェース: PascalCase（例: `PostWithAuthor`）
+- 定数: UPPER_SNAKE_CASE（例: `MAX_POST_TITLE_LENGTH`）
+
+## コミットメッセージ
+
+- フォーマット: `[type] 簡潔な説明`
+- タイプ: `feat`, `fix`, `docs`, `refactor`, `style`, `test`
+- 例: `[feat] ボランティア募集一覧に無限スクロールを追加`

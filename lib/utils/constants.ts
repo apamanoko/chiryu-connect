@@ -1,0 +1,32 @@
+/**
+ * 文字数制限の定数
+ */
+export const MAX_LENGTH = {
+  USER_NAME: 50,
+  USER_BIO: 500,
+  POST_TITLE: 100,
+  POST_DESCRIPTION: 5000,
+  POST_LOCATION: 200,
+  POST_REQUIRED_SKILLS: 500,
+  POST_REWARD_DESCRIPTION: 200,
+  APPLICATION_MESSAGE: 500,
+  MESSAGE_CONTENT: 2000,
+  TAG_NAME: 50,
+} as const;
+
+/**
+ * 数値制限の定数
+ */
+export const NUMERIC_LIMITS = {
+  POST_MAX_PARTICIPANTS_MIN: 1,
+  POST_MAX_PARTICIPANTS_MAX: 100,
+  POST_REWARD_AMOUNT_MIN: 0,
+} as const;
+
+/**
+ * ページネーションの定数
+ */
+export const PAGINATION = {
+  DEFAULT_LIMIT: 20,
+  MAX_LIMIT: 100,
+} as const;
