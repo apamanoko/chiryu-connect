@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPostAction } from '@/app/actions/posts/create';
+import { updatePostAction } from '@/app/actions/posts/update';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,29 +18,44 @@ import { ja } from 'date-fns/locale';
 
 interface PostFormProps {
   tags: Tag[];
+  postId?: string;
+  initialData?: {
+    title: string;
+    description: string;
+    activityDate: Date;
+    activityEndDate: Date | null;
+    location: string;
+    maxParticipants: number;
+    requiredSkills: string | null;
+    rewardAmount: number | null;
+    rewardDescription: string | null;
+    tagIds: string[];
+  };
 }
 
 /**
  * 投稿フォームコンポーネント（Client Component）
+ * 新規作成と編集の両方に対応
  */
-export function PostForm({ tags }: PostFormProps) {
+export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const router = useRouter();
   const { addToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const isEditMode = !!postId;
 
-  // フォーム状態
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [activityDate, setActivityDate] = useState<Date | null>(null);
-  const [activityEndDate, setActivityEndDate] = useState<Date | null>(null);
-  const [location, setLocation] = useState('');
-  const [maxParticipants, setMaxParticipants] = useState(1);
-  const [requiredSkills, setRequiredSkills] = useState('');
-  const [hasReward, setHasReward] = useState(false);
-  const [rewardAmount, setRewardAmount] = useState<number | null>(null);
-  const [rewardDescription, setRewardDescription] = useState('');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  // フォーム状態（初期データがある場合はそれを使用）
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [activityDate, setActivityDate] = useState<Date | null>(initialData?.activityDate || null);
+  const [activityEndDate, setActivityEndDate] = useState<Date | null>(initialData?.activityEndDate || null);
+  const [location, setLocation] = useState(initialData?.location || '');
+  const [maxParticipants, setMaxParticipants] = useState(initialData?.maxParticipants || 1);
+  const [requiredSkills, setRequiredSkills] = useState(initialData?.requiredSkills || '');
+  const [hasReward, setHasReward] = useState(!!initialData?.rewardAmount);
+  const [rewardAmount, setRewardAmount] = useState<number | null>(initialData?.rewardAmount || null);
+  const [rewardDescription, setRewardDescription] = useState(initialData?.rewardDescription || '');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialData?.tagIds || []);
 
   // バリデーション
   const titleError = title.length > MAX_LENGTH.POST_TITLE ? `タイトルは${MAX_LENGTH.POST_TITLE}文字以内である必要があります` : null;
@@ -74,34 +90,68 @@ export function PostForm({ tags }: PostFormProps) {
     }
 
     startTransition(async () => {
-      const result = await createPostAction({
-        title: title.trim(),
-        description: description.trim(),
-        activityDate: activityDate!,
-        activityEndDate: activityEndDate || null,
-        location: location.trim(),
-        maxParticipants,
-        requiredSkills: requiredSkills.trim() || null,
-        rewardAmount: hasReward ? rewardAmount : null,
-        rewardDescription: hasReward && rewardDescription.trim() ? rewardDescription.trim() : null,
-        tagIds: selectedTagIds,
-      });
+      if (isEditMode && postId) {
+        // 編集モード
+        const result = await updatePostAction(postId, {
+          title: title.trim(),
+          description: description.trim(),
+          activityDate: activityDate!,
+          activityEndDate: activityEndDate || null,
+          location: location.trim(),
+          maxParticipants,
+          requiredSkills: requiredSkills.trim() || null,
+          rewardAmount: hasReward ? rewardAmount : null,
+          rewardDescription: hasReward && rewardDescription.trim() ? rewardDescription.trim() : null,
+          tagIds: selectedTagIds,
+        });
 
-      if (result.success) {
-        addToast({
-          type: 'success',
-          title: '投稿を作成しました',
-          description: '募集が正常に作成されました。',
-        });
-        router.push(`/posts/${result.data.id}`);
-        router.refresh();
+        if (result.success) {
+          addToast({
+            type: 'success',
+            title: '投稿を更新しました',
+            description: '募集が正常に更新されました。',
+          });
+          router.push(`/posts/${postId}`);
+          router.refresh();
+        } else {
+          setError(result.error);
+          addToast({
+            type: 'error',
+            title: '投稿の更新に失敗しました',
+            description: result.error,
+          });
+        }
       } else {
-        setError(result.error);
-        addToast({
-          type: 'error',
-          title: '投稿の作成に失敗しました',
-          description: result.error,
+        // 新規作成モード
+        const result = await createPostAction({
+          title: title.trim(),
+          description: description.trim(),
+          activityDate: activityDate!,
+          activityEndDate: activityEndDate || null,
+          location: location.trim(),
+          maxParticipants,
+          requiredSkills: requiredSkills.trim() || null,
+          rewardAmount: hasReward ? rewardAmount : null,
+          rewardDescription: hasReward && rewardDescription.trim() ? rewardDescription.trim() : null,
+          tagIds: selectedTagIds,
         });
+
+        if (result.success) {
+          addToast({
+            type: 'success',
+            title: '投稿を作成しました',
+            description: '募集が正常に作成されました。',
+          });
+          router.push(`/posts/${result.data.id}`);
+          router.refresh();
+        } else {
+          setError(result.error);
+          addToast({
+            type: 'error',
+            title: '投稿の作成に失敗しました',
+            description: result.error,
+          });
+        }
       }
     });
   };
@@ -395,7 +445,7 @@ export function PostForm({ tags }: PostFormProps) {
           disabled={!isFormValid || isPending}
           className="flex-1"
         >
-          {isPending ? '投稿中...' : '投稿する'}
+          {isPending ? (isEditMode ? '更新中...' : '投稿中...') : (isEditMode ? '更新する' : '投稿する')}
         </Button>
       </div>
     </form>
