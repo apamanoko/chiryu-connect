@@ -1,5 +1,6 @@
 import { SignUp } from '@clerk/nextjs';
 import Link from 'next/link';
+import { WebViewWarning } from '@/components/auth/webview-warning';
 
 export default function SignUpPage() {
   return (
@@ -8,6 +9,8 @@ export default function SignUpPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Chiryu Connect</h1>
         <p className="text-gray-600">知立市のボランティアマッチング</p>
       </div>
+      
+      <WebViewWarning />
       
       <div className="bg-white rounded-lg shadow-lg p-6">
         <SignUp
