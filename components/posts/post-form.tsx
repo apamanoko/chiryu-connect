@@ -22,8 +22,8 @@ interface PostFormProps {
   initialData?: {
     title: string;
     description: string;
-    activityDate: Date;
-    activityEndDate: Date | null;
+    activityDate: Date | string;
+    activityEndDate: Date | string | null;
     location: string;
     maxParticipants: number;
     requiredSkills: string | null;
@@ -45,10 +45,21 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const isEditMode = !!postId;
 
   // フォーム状態（初期データがある場合はそれを使用）
+  // DateオブジェクトはServer ComponentからClient Componentに渡される際にISO文字列にシリアライズされるため、変換が必要
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
-  const [activityDate, setActivityDate] = useState<Date | null>(initialData?.activityDate || null);
-  const [activityEndDate, setActivityEndDate] = useState<Date | null>(initialData?.activityEndDate || null);
+  const [activityDate, setActivityDate] = useState<Date | null>(() => {
+    if (!initialData?.activityDate) return null;
+    return typeof initialData.activityDate === 'string'
+      ? new Date(initialData.activityDate)
+      : initialData.activityDate;
+  });
+  const [activityEndDate, setActivityEndDate] = useState<Date | null>(() => {
+    if (!initialData?.activityEndDate) return null;
+    return typeof initialData.activityEndDate === 'string'
+      ? new Date(initialData.activityEndDate)
+      : initialData.activityEndDate;
+  });
   const [location, setLocation] = useState(initialData?.location || '');
   const [maxParticipants, setMaxParticipants] = useState(initialData?.maxParticipants || 1);
   const [requiredSkills, setRequiredSkills] = useState(initialData?.requiredSkills || '');
@@ -64,13 +75,17 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const requiredSkillsError = requiredSkills.length > MAX_LENGTH.POST_REQUIRED_SKILLS ? `必要なスキルは${MAX_LENGTH.POST_REQUIRED_SKILLS}文字以内である必要があります` : null;
   const rewardDescriptionError = rewardDescription.length > MAX_LENGTH.POST_REWARD_DESCRIPTION ? `謝礼説明は${MAX_LENGTH.POST_REWARD_DESCRIPTION}文字以内である必要があります` : null;
 
+  // 編集モードでは過去の日付も有効、新規作成モードでは未来の日付のみ有効
+  const isActivityDateValid = activityDate !== null && (
+    isEditMode || activityDate > new Date()
+  );
+
   const isFormValid =
     title.trim().length > 0 &&
     title.trim().length <= MAX_LENGTH.POST_TITLE &&
     description.trim().length > 0 &&
     description.trim().length <= MAX_LENGTH.POST_DESCRIPTION &&
-    activityDate !== null &&
-    activityDate > new Date() &&
+    isActivityDateValid &&
     location.trim().length > 0 &&
     location.trim().length <= MAX_LENGTH.POST_LOCATION &&
     maxParticipants >= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN &&
