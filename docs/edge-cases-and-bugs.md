@@ -126,6 +126,25 @@
 
 **現状**: 現在の実装では問題が発生していないが、将来的に改善を検討
 
+### 6. Google OAuthのWebView制限
+
+**問題**: モバイルブラウザのWebView（アプリ内ブラウザ）からGoogle OAuthでサインインしようとすると、`403: disallowed_useragent`エラーが発生する。
+
+**原因**: Google OAuthはセキュリティ上の理由から、WebView（アプリ内ブラウザ）での認証を許可していない。
+
+**対処方法**:
+- ✅ **実装済み**: WebViewを検出し、ユーザーに外部ブラウザで開くよう促す警告を表示
+- ✅ **実装済み**: `components/auth/webview-warning.tsx` コンポーネントを作成
+- ✅ **実装済み**: ログイン・新規登録ページに警告を追加
+
+**ユーザーへの案内**:
+- iOS: 右上の「...」→「Safariで開く」
+- Android: 右上の「...」→「Chromeで開く」または「ブラウザで開く」
+
+**参考**: 
+- [Clerk公式ドキュメント - Google OAuth](https://clerk.com/docs/authentication/social-connections/google)
+- [Google OAuth セキュリティポリシー](https://developers.google.com/identity/protocols/oauth2/policies)
+
 ---
 
 ## 修正済みのバグ
@@ -142,6 +161,10 @@
 
 ### 4. タグのN+1クエリ問題
 - ✅ **修正済み**: `getTagsByPostIds` で一括取得を実装
+
+### 5. Google OAuthのWebView制限問題
+- ✅ **修正済み**: WebView検出と警告表示を実装
+- ✅ **修正済み**: ログイン・新規登録ページに警告を追加
 
 ---
 
