@@ -44,7 +44,9 @@ export function ChatInput({ applicationId }: ChatInputProps) {
 
       if (result.success) {
         setContent('');
-        router.refresh();
+        // メッセージ送信成功を通知（リアルタイム更新のため）
+        window.dispatchEvent(new CustomEvent('chat:message-sent'));
+        // ページリロードは不要（リアルタイム更新で対応）
       } else {
         setError(result.error);
         addToast({

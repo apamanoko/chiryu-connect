@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { getApplicationById } from '@/lib/db/queries/applications';
 import { getMessagesByApplicationId } from '@/lib/db/queries/messages';
-import { ChatMessageWrapper } from '@/components/chat/chat-message-wrapper';
+import { ChatMessageList } from '@/components/chat/chat-message-list';
 import { ChatInput } from '@/components/chat/chat-input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -74,25 +74,14 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
       </div>
 
       {/* メッセージエリア */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" id="messages-container">
         <div className="container mx-auto px-4 py-6">
           <div className="max-w-4xl mx-auto">
-            {sortedMessages.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
-                <p>まだメッセージがありません</p>
-                <p className="text-sm mt-2">メッセージを送信して会話を始めましょう</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {sortedMessages.map((message) => (
-                  <ChatMessageWrapper
-                    key={message.id}
-                    message={message}
-                    currentUserId={currentUser.id}
-                  />
-                ))}
-              </div>
-            )}
+            <ChatMessageList
+              applicationId={id}
+              currentUserId={currentUser.id}
+              initialMessages={sortedMessages}
+            />
           </div>
         </div>
       </div>
