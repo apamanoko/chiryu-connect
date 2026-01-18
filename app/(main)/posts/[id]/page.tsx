@@ -5,6 +5,7 @@ import { getApplicationByPostAndApplicant } from '@/lib/db/queries/applications'
 import { PostDetail } from '@/components/posts/post-detail';
 import { ApplicationButton } from '@/components/applications/application-button';
 import { ApplicationList } from '@/components/applications/application-list';
+import { PostActions } from '@/components/posts/post-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -57,6 +58,18 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
           {/* 投稿詳細 */}
           <PostDetail post={post} />
+
+          {/* 編集・取消ボタン（募集者のみ表示） */}
+          {isPostAuthor && currentUserId && (
+            <Card className="mt-6">
+              <CardContent className="p-6">
+                <PostActions
+                  postId={post.id}
+                  postStatus={post.status as 'active' | 'closed' | 'cancelled'}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* 応募ボタン（募集者以外、応募可能な場合のみ表示） */}
           {currentUserId && (
