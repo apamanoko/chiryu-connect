@@ -58,17 +58,6 @@ export function ChatInput({ applicationId }: ChatInputProps) {
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Enterキーで送信（Shift+Enterで改行）
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      const form = e.currentTarget.form;
-      if (form) {
-        form.requestSubmit();
-      }
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="border-t bg-white p-4">
       {error && (
@@ -80,7 +69,6 @@ export function ChatInput({ applicationId }: ChatInputProps) {
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          onKeyDown={handleKeyDown}
           placeholder="メッセージを入力..."
           rows={1}
           maxLength={MAX_LENGTH.MESSAGE_CONTENT}
