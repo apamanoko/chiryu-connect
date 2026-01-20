@@ -2,8 +2,10 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Home, PlusCircle, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getUnreadMessageCountAction } from '@/app/actions/messages/unread';
 
 /**
  * ボトムナビゲーションバーコンポーネント（Client Component）
@@ -11,6 +13,31 @@ import { cn } from '@/lib/utils';
  */
 export function BottomNavigation() {
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // 未読メッセージ数を取得（5秒ごとに更新）
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchUnread = async () => {
+      try {
+        const result = await getUnreadMessageCountAction();
+        if (isMounted && result.success) {
+          setUnreadCount(result.count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread message count:', error);
+      }
+    };
+
+    fetchUnread();
+    const intervalId = setInterval(fetchUnread, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const navItems = [
     {
@@ -45,6 +72,7 @@ export function BottomNavigation() {
         <div className="flex items-center justify-around h-16 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const showBadge = item.href === '/chat' && unreadCount > 0;
             return (
               <Link
                 key={item.href}
@@ -56,7 +84,14 @@ export function BottomNavigation() {
                     : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50/50'
                 )}
               >
-                <Icon className={cn('w-6 h-6', item.active && 'text-orange-600')} />
+                <div className="relative">
+                  <Icon className={cn('w-6 h-6', item.active && 'text-orange-600')} />
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </div>
                 <span className={cn('text-xs font-medium', item.active && 'text-orange-600')}>
                   {item.label}
                 </span>
