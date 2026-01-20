@@ -172,6 +172,33 @@ export const messages = sqliteTable(
 );
 
 // ============================================
+// Favorites テーブル（お気に入り）
+// ============================================
+export const favorites = sqliteTable(
+  'favorites',
+  {
+    id: text('id').primaryKey(), // UUID
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    postId: text('post_id')
+      .notNull()
+      .references(() => posts.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: index('favorite_user_id_idx').on(table.userId),
+    postIdIdx: index('favorite_post_id_idx').on(table.postId),
+    userPostUniqueIdx: uniqueIndex('favorite_user_post_unique_idx').on(
+      table.userId,
+      table.postId
+    ),
+  })
+);
+
+// ============================================
 // 型定義のエクスポート
 // ============================================
 export type User = typeof users.$inferSelect;
@@ -191,6 +218,9 @@ export type NewApplication = typeof applications.$inferInsert;
 
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+
+export type Favorite = typeof favorites.$inferSelect;
+export type NewFavorite = typeof favorites.$inferInsert;
 
 // ============================================
 // Enum型定義

@@ -2,10 +2,12 @@ import { notFound } from 'next/navigation';
 import { getPostById } from '@/lib/db/queries/posts';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { getApplicationByPostAndApplicant } from '@/lib/db/queries/applications';
+import { isFavorite } from '@/lib/db/queries/favorites';
 import { PostDetail } from '@/components/posts/post-detail';
 import { ApplicationButton } from '@/components/applications/application-button';
 import { ApplicationList } from '@/components/applications/application-list';
 import { PostActions } from '@/components/posts/post-actions';
+import { FavoriteButton } from '@/components/posts/favorite-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -39,6 +41,12 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     existingApplication = await getApplicationByPostAndApplicant(id, currentUserId);
   }
 
+  // お気に入りかどうかを確認
+  let isPostFavorite = false;
+  if (currentUserId) {
+    isPostFavorite = await isFavorite(currentUserId, id);
+  }
+
   // 募集者かどうかを確認
   const isPostAuthor = currentUserId === post.authorId;
 
@@ -58,6 +66,15 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
           {/* 投稿詳細 */}
           <PostDetail post={post} />
+
+          {/* お気に入りボタン（募集者以外のみ表示） */}
+          {currentUserId && !isPostAuthor && (
+            <Card className="mt-6">
+              <CardContent className="p-6">
+                <FavoriteButton postId={post.id} initialIsFavorite={isPostFavorite} />
+              </CardContent>
+            </Card>
+          )}
 
           {/* 編集・取消ボタン（募集者のみ表示） */}
           {isPostAuthor && currentUserId && (
