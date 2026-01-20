@@ -4,6 +4,8 @@ import { ProfileHeader } from '@/components/profile/profile-header';
 import { UserPostList } from '@/components/posts/user-post-list';
 import { UserApplicationList } from '@/components/applications/user-application-list';
 import { ChatRoomList } from '@/components/chat/chat-room-list';
+import { FavoriteList } from '@/components/profile/favorite-list';
+import { TodoList } from '@/components/profile/todo-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -25,12 +27,24 @@ export default async function ProfilePage() {
           <ProfileHeader />
 
           {/* タブナビゲーション */}
-          <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+          <Tabs defaultValue="todos" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="todos">やること</TabsTrigger>
+              <TabsTrigger value="favorites">お気に入り</TabsTrigger>
               <TabsTrigger value="posts">投稿した募集</TabsTrigger>
               <TabsTrigger value="applications">応募した募集</TabsTrigger>
               <TabsTrigger value="chat">チャット</TabsTrigger>
             </TabsList>
+
+            {/* やることリストタブ */}
+            <TabsContent value="todos" className="space-y-4">
+              <TodoList />
+            </TabsContent>
+
+            {/* お気に入りタブ */}
+            <TabsContent value="favorites" className="space-y-4">
+              <FavoriteList />
+            </TabsContent>
 
             {/* 投稿した募集タブ */}
             <TabsContent value="posts" className="space-y-4">

@@ -12,6 +12,7 @@ import { PAGINATION } from '@/lib/utils/constants';
 interface InfinitePostListProps {
   initialPosts: PostWithAuthor[];
   initialTags: Map<string, Tag[]>;
+  initialFavoriteStatuses: { postId: string; isFavorite: boolean }[];
   searchParams: {
     keyword?: string;
     tagIds?: string[];
@@ -27,10 +28,20 @@ interface InfinitePostListProps {
 export function InfinitePostList({
   initialPosts,
   initialTags,
+  initialFavoriteStatuses,
   searchParams,
 }: InfinitePostListProps) {
   const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts);
   const [tagsMap, setTagsMap] = useState<Map<string, Tag[]>>(initialTags);
+  const [favoriteStatuses, setFavoriteStatuses] = useState<Map<string, boolean>>(
+    () => {
+      const map = new Map<string, boolean>();
+      initialFavoriteStatuses.forEach(({ postId, isFavorite }) => {
+        map.set(postId, isFavorite);
+      });
+      return map;
+    }
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialPosts.length >= PAGINATION.DEFAULT_LIMIT);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +55,13 @@ export function InfinitePostList({
   useEffect(() => {
     setPosts(initialPosts);
     setTagsMap(initialTags);
+    setFavoriteStatuses(() => {
+      const map = new Map<string, boolean>();
+      initialFavoriteStatuses.forEach(({ postId, isFavorite }) => {
+        map.set(postId, isFavorite);
+      });
+      return map;
+    });
     offsetRef.current = initialPosts.length;
     setHasMore(initialPosts.length >= PAGINATION.DEFAULT_LIMIT);
     setError(null);
@@ -75,6 +93,16 @@ export function InfinitePostList({
             const updated = new Map(prev);
             newTagsArray.forEach(({ postId, tags }) => {
               updated.set(postId, tags);
+            });
+            return updated;
+          });
+          // 追加分のお気に入り状態は、クライアント側では初期状態不明なのでfalseで初期化
+          setFavoriteStatuses((prev) => {
+            const updated = new Map(prev);
+            newPosts.forEach((post) => {
+              if (!updated.has(post.id)) {
+                updated.set(post.id, false);
+              }
             });
             return updated;
           });
@@ -126,7 +154,15 @@ export function InfinitePostList({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => {
           const tags = tagsMap.get(post.id) || [];
-          return <PostCard key={post.id} post={post} tags={tags} />;
+          const isFavorite = favoriteStatuses.get(post.id) ?? false;
+          return (
+            <PostCard
+              key={post.id}
+              post={post}
+              tags={tags}
+              initialIsFavorite={isFavorite}
+            />
+          );
         })}
       </div>
 
