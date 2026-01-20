@@ -81,6 +81,9 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
               applicationId={id}
               currentUserId={currentUser.id}
               initialMessages={sortedMessages}
+              otherUserId={otherUser.id}
+              otherUserName={otherUser.name}
+              otherUserAvatarUrl={otherUser.avatarUrl}
             />
           </div>
         </div>

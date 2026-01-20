@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createMessageAction } from '@/app/actions/messages/create';
+import { setTypingAction, clearTypingAction } from '@/app/actions/messages/typing';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
@@ -22,6 +23,45 @@ export function ChatInput({ applicationId }: ChatInputProps) {
   const [isPending, startTransition] = useTransition();
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
+
+  // 入力中状態を管理
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+
+    // 入力中状態を設定
+    if (newContent.trim() && !isTypingRef.current) {
+      isTypingRef.current = true;
+      setTypingAction(applicationId).catch(console.error);
+    }
+
+    // タイムアウトをリセット
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // 1秒後に「入力中」を解除（入力が止まった場合）
+    typingTimeoutRef.current = setTimeout(() => {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        clearTypingAction(applicationId).catch(console.error);
+      }
+    }, 1000);
+  };
+
+  // コンポーネントのアンマウント時にクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (isTypingRef.current) {
+        clearTypingAction(applicationId).catch(console.error);
+      }
+    };
+  }, [applicationId]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,6 +74,15 @@ export function ChatInput({ applicationId }: ChatInputProps) {
     if (content.length > MAX_LENGTH.MESSAGE_CONTENT) {
       setError(`メッセージは${MAX_LENGTH.MESSAGE_CONTENT}文字以内である必要があります`);
       return;
+    }
+
+    // 入力中状態を解除
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      clearTypingAction(applicationId).catch(console.error);
     }
 
     startTransition(async () => {
@@ -68,7 +117,7 @@ export function ChatInput({ applicationId }: ChatInputProps) {
       <div className="flex gap-2 items-end">
         <Textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleInputChange}
           placeholder="メッセージを入力..."
           rows={1}
           maxLength={MAX_LENGTH.MESSAGE_CONTENT}

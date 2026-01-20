@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getMessagesAction } from '@/app/actions/messages/get';
+import { getTypingUsersAction } from '@/app/actions/messages/typing';
 import { ChatMessageWrapper } from './chat-message-wrapper';
+import { TypingIndicator } from './typing-indicator';
 import type { MessageWithUsers } from '@/lib/types/message';
 
 interface ChatMessageListProps {
   applicationId: string;
   currentUserId: string;
   initialMessages: MessageWithUsers[];
+  otherUserId: string;
+  otherUserName: string;
+  otherUserAvatarUrl?: string | null;
 }
 
 /**
@@ -19,11 +24,16 @@ export function ChatMessageList({
   applicationId,
   currentUserId,
   initialMessages,
+  otherUserId,
+  otherUserName,
+  otherUserAvatarUrl,
 }: ChatMessageListProps) {
   const [messages, setMessages] = useState<MessageWithUsers[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const typingPollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIdRef = useRef<string | null>(
     initialMessages.length > 0 ? initialMessages[initialMessages.length - 1].id : null
   );
@@ -92,14 +102,31 @@ export function ChatMessageList({
     }
   }, [applicationId, checkShouldAutoScroll]);
 
+  // 入力中状態を取得
+  const fetchTypingStatus = useCallback(async () => {
+    try {
+      const result = await getTypingUsersAction(applicationId);
+      if (result.success) {
+        setIsOtherUserTyping(result.data.includes(otherUserId));
+      }
+    } catch (error) {
+      console.error('Failed to fetch typing status:', error);
+    }
+  }, [applicationId, otherUserId]);
+
   // ポーリングを開始
   useEffect(() => {
     // 初回レンダリング時は少し待ってから開始
     const initialTimeout = setTimeout(() => {
-      // 3秒間隔でポーリング
+      // 3秒間隔でメッセージをポーリング
       pollingIntervalRef.current = setInterval(() => {
         fetchMessages();
       }, 3000);
+
+      // 1秒間隔で入力中状態をポーリング（より頻繁にチェック）
+      typingPollingIntervalRef.current = setInterval(() => {
+        fetchTypingStatus();
+      }, 1000);
     }, 1000);
 
     return () => {
@@ -107,8 +134,11 @@ export function ChatMessageList({
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
+      if (typingPollingIntervalRef.current) {
+        clearInterval(typingPollingIntervalRef.current);
+      }
     };
-  }, [fetchMessages]);
+  }, [fetchMessages, fetchTypingStatus]);
 
   // ページが表示されている間のみポーリング（タブが非アクティブの時は停止）
   useEffect(() => {
@@ -119,13 +149,23 @@ export function ChatMessageList({
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
         }
+        if (typingPollingIntervalRef.current) {
+          clearInterval(typingPollingIntervalRef.current);
+          typingPollingIntervalRef.current = null;
+        }
       } else {
         // タブがアクティブになったら即座に取得してからポーリング再開
         fetchMessages();
+        fetchTypingStatus();
         if (!pollingIntervalRef.current) {
           pollingIntervalRef.current = setInterval(() => {
             fetchMessages();
           }, 3000);
+        }
+        if (!typingPollingIntervalRef.current) {
+          typingPollingIntervalRef.current = setInterval(() => {
+            fetchTypingStatus();
+          }, 1000);
         }
       }
     };
@@ -135,7 +175,7 @@ export function ChatMessageList({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [fetchMessages]);
+  }, [fetchMessages, fetchTypingStatus]);
 
   // メッセージ送信成功時に即座に取得
   useEffect(() => {
@@ -189,6 +229,13 @@ export function ChatMessageList({
               currentUserId={currentUserId}
             />
           ))}
+          {/* 入力中表示 */}
+          {isOtherUserTyping && (
+            <TypingIndicator
+              userName={otherUserName}
+              avatarUrl={otherUserAvatarUrl}
+            />
+          )}
           <div ref={messagesEndRef} />
         </div>
       )}
