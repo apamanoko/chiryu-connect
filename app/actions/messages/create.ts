@@ -5,7 +5,6 @@ import { getUserByClerkId } from '@/lib/db/queries/users';
 import { getApplicationById } from '@/lib/db/queries/applications';
 import { createMessage } from '@/lib/db/queries/messages';
 import { validateMessageContent } from '@/lib/utils/validation';
-import { revalidatePath } from 'next/cache';
 import type { CreateMessageInput } from '@/lib/types/message';
 import type { MessageWithUsers } from '@/lib/types/message';
 import { ForbiddenError, NotFoundError } from '@/lib/utils/errors';
@@ -77,10 +76,6 @@ export async function createMessageAction(
       receiverId,
       contentValidation.data
     );
-
-    // キャッシュを再検証
-    revalidatePath(`/chat/${input.applicationId}`);
-    revalidatePath('/chat');
 
     return {
       success: true,
