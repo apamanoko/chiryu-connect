@@ -15,6 +15,7 @@ import type { Tag } from '@/lib/types/tag';
 import { Calendar, Clock, MapPin, Users, Tag as TagIcon, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { DateTimePicker } from '@/components/shared/datetime-picker';
 
 interface PostFormProps {
   tags: Tag[];
@@ -203,46 +204,31 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
 
       {/* 活動日時 */}
       <div className="space-y-4">
-        <div>
-          <label htmlFor="activityDate" className="block text-sm font-medium text-gray-700 mb-2">
-            活動開始日時 <span className="text-red-500">*</span>
-          </label>
-          <Input
-            id="activityDate"
-            type="datetime-local"
-            value={activityDate ? format(activityDate, "yyyy-MM-dd'T'HH:mm") : ''}
-            onChange={(e) => {
-              const date = e.target.value ? new Date(e.target.value) : null;
-              setActivityDate(date);
-              if (date && activityEndDate && activityEndDate <= date) {
-                setActivityEndDate(null);
-              }
-            }}
-            required
-            min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
-          />
-        </div>
-        <div>
-          <label htmlFor="activityEndDate" className="block text-sm font-medium text-gray-700 mb-2">
-            活動終了日時（任意）
-          </label>
-          <Input
-            id="activityEndDate"
-            type="datetime-local"
-            value={activityEndDate ? format(activityEndDate, "yyyy-MM-dd'T'HH:mm") : ''}
-            onChange={(e) => {
-              const date = e.target.value ? new Date(e.target.value) : null;
-              setActivityEndDate(date);
-            }}
-            min={activityDate ? format(activityDate, "yyyy-MM-dd'T'HH:mm") : undefined}
-            disabled={!activityDate}
-          />
-          {activityEndDate && activityEndDate <= (activityDate || new Date()) && (
-            <p className="mt-1 text-xs text-red-500">
-              終了日時は開始日時より後である必要があります
-            </p>
-          )}
-        </div>
+        <DateTimePicker
+          value={activityDate}
+          onChange={(date) => {
+            setActivityDate(date);
+            if (date && activityEndDate && activityEndDate <= date) {
+              setActivityEndDate(null);
+            }
+          }}
+          label="活動開始日時"
+          required
+          minDate={isEditMode ? undefined : new Date()}
+          error={!isActivityDateValid ? '活動開始日時を正しく選択してください' : undefined}
+        />
+        <DateTimePicker
+          value={activityEndDate}
+          onChange={(date) => setActivityEndDate(date)}
+          label="活動終了日時（任意）"
+          minDate={activityDate || undefined}
+          disabled={!activityDate}
+          error={
+            activityEndDate && activityEndDate <= (activityDate || new Date())
+              ? '終了日時は開始日時より後である必要があります'
+              : undefined
+          }
+        />
       </div>
 
       {/* 活動場所 */}
