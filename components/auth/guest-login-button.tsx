@@ -21,8 +21,25 @@ export function GuestLoginButton() {
   const guestEmail = process.env.NEXT_PUBLIC_GUEST_EMAIL;
   const guestPassword = process.env.NEXT_PUBLIC_GUEST_PASSWORD;
 
+  // デバッグ用: 開発環境でのみ環境変数の状態をログに出力
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Guest login env check:', {
+      hasEmail: !!guestEmail,
+      hasPassword: !!guestPassword,
+      emailLength: guestEmail?.length || 0,
+      passwordLength: guestPassword?.length || 0,
+    });
+  }
+
   // ゲスト用のメール・パスワードが設定されていない場合はボタンを表示しない
   if (!guestEmail || !guestPassword) {
+    // 本番環境では何も表示しない（セキュリティ上の理由）
+    // 開発環境では警告を表示（オプション）
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        'ゲストログインボタンが表示されません。環境変数 NEXT_PUBLIC_GUEST_EMAIL と NEXT_PUBLIC_GUEST_PASSWORD が設定されているか確認してください。'
+      );
+    }
     return null;
   }
 
