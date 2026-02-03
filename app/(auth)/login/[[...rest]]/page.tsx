@@ -1,6 +1,7 @@
 import { SignIn } from '@clerk/nextjs';
 import Link from 'next/link';
 import { WebViewWarning } from '@/components/auth/webview-warning';
+import { GuestLoginButton } from '@/components/auth/guest-login-button';
 
 export default function LoginPage() {
   return (
@@ -25,6 +26,9 @@ export default function LoginPage() {
           signUpUrl="/sign-up"
           afterSignInUrl="/"
         />
+
+        {/* ゲストログイン */}
+        <GuestLoginButton />
       </div>
       
       <div className="mt-6 text-center text-sm text-gray-600">
