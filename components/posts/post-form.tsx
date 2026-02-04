@@ -68,6 +68,10 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const [rewardAmount, setRewardAmount] = useState<number | null>(initialData?.rewardAmount || null);
   const [rewardDescription, setRewardDescription] = useState(initialData?.rewardDescription || '');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialData?.tagIds || []);
+  const [touched, setTouched] = useState<{
+    activityDate?: boolean;
+    activityEndDate?: boolean;
+  }>({});
 
   // バリデーション
   const titleError = title.length > MAX_LENGTH.POST_TITLE ? `タイトルは${MAX_LENGTH.POST_TITLE}文字以内である必要があります` : null;
@@ -80,6 +84,11 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const isActivityDateValid = activityDate !== null && (
     isEditMode || activityDate > new Date()
   );
+
+  // エラーメッセージは、フィールドが触られた後（touched）または送信試行後のみ表示
+  const activityDateError = touched.activityDate && !isActivityDateValid
+    ? '活動開始日時を正しく選択してください'
+    : undefined;
 
   const isFormValid =
     title.trim().length > 0 &&
@@ -99,6 +108,12 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    // 送信試行時にすべてのフィールドをtouchedにする
+    setTouched({
+      activityDate: true,
+      activityEndDate: true,
+    });
 
     if (!isFormValid) {
       setError('入力内容を確認してください');
@@ -208,6 +223,7 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
           value={activityDate}
           onChange={(date) => {
             setActivityDate(date);
+            setTouched((prev) => ({ ...prev, activityDate: true }));
             if (date && activityEndDate && activityEndDate <= date) {
               setActivityEndDate(null);
             }
@@ -215,16 +231,21 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
           label="活動開始日時"
           required
           minDate={isEditMode ? undefined : new Date()}
-          error={!isActivityDateValid ? '活動開始日時を正しく選択してください' : undefined}
+          error={activityDateError}
         />
         <DateTimePicker
           value={activityEndDate}
-          onChange={(date) => setActivityEndDate(date)}
+          onChange={(date) => {
+            setActivityEndDate(date);
+            setTouched((prev) => ({ ...prev, activityEndDate: true }));
+          }}
           label="活動終了日時（任意）"
           minDate={activityDate || undefined}
           disabled={!activityDate}
           error={
-            activityEndDate && activityEndDate <= (activityDate || new Date())
+            touched.activityEndDate &&
+            activityEndDate &&
+            activityEndDate <= (activityDate || new Date())
               ? '終了日時は開始日時より後である必要があります'
               : undefined
           }
