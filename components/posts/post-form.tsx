@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
 import { MAX_LENGTH, NUMERIC_LIMITS } from '@/lib/utils/constants';
 import type { Tag } from '@/lib/types/tag';
-import { Calendar, Clock, MapPin, Users, Tag as TagIcon, DollarSign } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Tag as TagIcon, DollarSign, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { DateTimePicker } from '@/components/shared/datetime-picker';
@@ -71,7 +71,11 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const [touched, setTouched] = useState<{
     activityDate?: boolean;
     activityEndDate?: boolean;
+    maxParticipants?: boolean;
   }>({});
+  const [maxParticipantsInput, setMaxParticipantsInput] = useState<string>(
+    initialData?.maxParticipants?.toString() || '1'
+  );
 
   // バリデーション
   const titleError = title.length > MAX_LENGTH.POST_TITLE ? `タイトルは${MAX_LENGTH.POST_TITLE}文字以内である必要があります` : null;
@@ -79,6 +83,15 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
   const locationError = location.length > MAX_LENGTH.POST_LOCATION ? `活動場所は${MAX_LENGTH.POST_LOCATION}文字以内である必要があります` : null;
   const requiredSkillsError = requiredSkills.length > MAX_LENGTH.POST_REQUIRED_SKILLS ? `必要なスキルは${MAX_LENGTH.POST_REQUIRED_SKILLS}文字以内である必要があります` : null;
   const rewardDescriptionError = rewardDescription.length > MAX_LENGTH.POST_REWARD_DESCRIPTION ? `謝礼説明は${MAX_LENGTH.POST_REWARD_DESCRIPTION}文字以内である必要があります` : null;
+
+  // 募集人数のバリデーション
+  const maxParticipantsNum = parseInt(maxParticipantsInput, 10);
+  const isMaxParticipantsValid = !isNaN(maxParticipantsNum) &&
+    maxParticipantsNum >= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN &&
+    maxParticipantsNum <= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX;
+  const maxParticipantsError = touched.maxParticipants && !isMaxParticipantsValid
+    ? `${NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN}〜${NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX}人の範囲で入力してください`
+    : null;
 
   // 編集モードでは過去の日付も有効、新規作成モードでは未来の日付のみ有効
   const isActivityDateValid = activityDate !== null && (
@@ -98,8 +111,7 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
     isActivityDateValid &&
     location.trim().length > 0 &&
     location.trim().length <= MAX_LENGTH.POST_LOCATION &&
-    maxParticipants >= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN &&
-    maxParticipants <= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX &&
+    isMaxParticipantsValid &&
     (!activityEndDate || activityEndDate > activityDate) &&
     (!hasReward || (rewardAmount !== null && rewardAmount >= NUMERIC_LIMITS.POST_REWARD_AMOUNT_MIN)) &&
     (!requiredSkills || requiredSkills.length <= MAX_LENGTH.POST_REQUIRED_SKILLS) &&
@@ -113,7 +125,13 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
     setTouched({
       activityDate: true,
       activityEndDate: true,
+      maxParticipants: true,
     });
+
+    // 募集人数の値を更新（バリデーション済みの値を使用）
+    if (isMaxParticipantsValid) {
+      setMaxParticipants(maxParticipantsNum);
+    }
 
     if (!isFormValid) {
       setError('入力内容を確認してください');
@@ -279,23 +297,85 @@ export function PostForm({ tags, postId, initialData }: PostFormProps) {
         <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-2">
           募集人数 <span className="text-red-500">*</span>
         </label>
-        <Input
-          id="maxParticipants"
-          type="number"
-          value={maxParticipants}
-          onChange={(e) => {
-            const value = parseInt(e.target.value, 10);
-            if (!isNaN(value)) {
-              setMaxParticipants(Math.max(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN, Math.min(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX, value)));
-            }
-          }}
-          min={NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN}
-          max={NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX}
-          required
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          {NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN}〜{NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX}人
-        </p>
+        <div className="flex items-center gap-2">
+          {/* カウントダウンボタン */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              const current = parseInt(maxParticipantsInput, 10) || NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN;
+              const newValue = Math.max(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN, current - 1);
+              setMaxParticipantsInput(newValue.toString());
+              setMaxParticipants(newValue);
+              setTouched((prev) => ({ ...prev, maxParticipants: true }));
+            }}
+            disabled={maxParticipantsNum <= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN}
+            className="flex-shrink-0"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+
+          {/* 数値入力フィールド */}
+          <Input
+            id="maxParticipants"
+            type="number"
+            value={maxParticipantsInput}
+            onChange={(e) => {
+              const value = e.target.value;
+              setMaxParticipantsInput(value);
+              setTouched((prev) => ({ ...prev, maxParticipants: true }));
+              
+              // 入力値が有効な場合のみ状態を更新
+              const numValue = parseInt(value, 10);
+              if (!isNaN(numValue) && numValue >= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN && numValue <= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX) {
+                setMaxParticipants(numValue);
+              }
+            }}
+            onBlur={() => {
+              // フォーカスが外れたときにバリデーション
+              const numValue = parseInt(maxParticipantsInput, 10);
+              if (isNaN(numValue) || numValue < NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN) {
+                setMaxParticipantsInput(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN.toString());
+                setMaxParticipants(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN);
+              } else if (numValue > NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX) {
+                setMaxParticipantsInput(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX.toString());
+                setMaxParticipants(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX);
+              }
+            }}
+            min={NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN}
+            max={NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX}
+            required
+            className={maxParticipantsError ? 'border-red-500' : ''}
+          />
+
+          {/* カウントアップボタン */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              const current = parseInt(maxParticipantsInput, 10) || NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN;
+              const newValue = Math.min(NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX, current + 1);
+              setMaxParticipantsInput(newValue.toString());
+              setMaxParticipants(newValue);
+              setTouched((prev) => ({ ...prev, maxParticipants: true }));
+            }}
+            disabled={maxParticipantsNum >= NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX}
+            className="flex-shrink-0"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="mt-1 flex justify-between text-xs">
+          {maxParticipantsError ? (
+            <span className="text-red-500">{maxParticipantsError}</span>
+          ) : (
+            <span className="text-gray-500">
+              {NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MIN}〜{NUMERIC_LIMITS.POST_MAX_PARTICIPANTS_MAX}人
+            </span>
+          )}
+        </div>
       </div>
 
       {/* 詳細説明 */}
